@@ -4,9 +4,10 @@ from app.config import Settings
 from app.db import Database
 from app.rag.rerank import CrossEncoderReranker, LLMReranker, Reranker
 from app.rag.retriever import HybridRetriever
+from app.rag.types import RerankerName, RetrievalMode
 
 
-def build_reranker(name: str, judge_llm: BaseChatModel, cache_dir: str) -> Reranker | None:
+def build_reranker(name: RerankerName, judge_llm: BaseChatModel, cache_dir: str) -> Reranker | None:
     match name:
         case "none":
             return None
@@ -22,8 +23,8 @@ def build_retriever(
     db: Database,
     judge_llm: BaseChatModel,
     *,
-    mode: str | None = None,
-    reranker: str | None = None,
+    mode: RetrievalMode | None = None,
+    reranker: RerankerName | None = None,
 ) -> HybridRetriever:
     return HybridRetriever(
         db.vector_store,

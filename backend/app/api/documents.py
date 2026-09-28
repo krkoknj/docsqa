@@ -2,24 +2,17 @@
 indexing worker (app/worker.py) parses, chunks, and embeds it. Clients poll the
 list endpoint for status (pending -> processing -> ready | failed)."""
 
-from pathlib import Path
-from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, HTTPException, UploadFile, status
 from sqlalchemy import text
 
 from app.auth import CurrentUser
-from app.config import Settings, get_settings
-from app.db import Database
-from app.deps import get_db
-from app.rag.ingest import SUPPORTED_EXTENSIONS
+from app.deps import DbDep, SettingsDep
+from app.rag.ingest import UnsupportedFileError, check_extension
 from app.schemas import DocumentOut
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
-
-DbDep = Annotated[Database, Depends(get_db)]
-SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 DOCUMENT_COLUMNS = "id, filename, content_type, size_bytes, chunk_count, status, error, created_at"
 
@@ -37,11 +30,10 @@ async def list_documents(user: CurrentUser, db: DbDep):
 @router.post("", response_model=DocumentOut, status_code=status.HTTP_202_ACCEPTED)
 async def upload_document(file: UploadFile, user: CurrentUser, db: DbDep, settings: SettingsDep):
     filename = file.filename or "untitled"
-    ext = Path(filename).suffix.lower()
-    if ext not in SUPPORTED_EXTENSIONS:
-        raise HTTPException(
-            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, f"지원하지 않는 파일 형식입니다: {ext or '(확장자 없음)'}"
-        )
+    try:
+        check_extension(filename)
+    except UnsupportedFileError as e:
+        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(e)) from None
     data = await file.read()
     if len(data) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(

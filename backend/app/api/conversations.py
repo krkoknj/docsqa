@@ -1,17 +1,13 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import text
 
 from app.auth import CurrentUser
-from app.db import Database
-from app.deps import get_db
+from app.deps import DbDep
 from app.schemas import ConversationDetail, ConversationOut
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
-
-DbDep = Annotated[Database, Depends(get_db)]
 
 
 @router.get("", response_model=list[ConversationOut])

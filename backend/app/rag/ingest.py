@@ -15,13 +15,17 @@ class UnsupportedFileError(ValueError):
     pass
 
 
-def load_pages(filename: str, data: bytes) -> list[tuple[int | None, str]]:
-    """Extract text as (page_number, text) pairs. Non-PDF files are a single page=None."""
+def check_extension(filename: str) -> str:
+    """Return the lowercased extension, or raise UnsupportedFileError."""
     ext = Path(filename).suffix.lower()
     if ext not in SUPPORTED_EXTENSIONS:
         raise UnsupportedFileError(f"지원하지 않는 파일 형식입니다: {ext or '(확장자 없음)'}")
+    return ext
 
-    if ext == ".pdf":
+
+def load_pages(filename: str, data: bytes) -> list[tuple[int | None, str]]:
+    """Extract text as (page_number, text) pairs. Non-PDF files are a single page=None."""
+    if check_extension(filename) == ".pdf":
         reader = PdfReader(io.BytesIO(data))
         return [(i + 1, page.extract_text() or "") for i, page in enumerate(reader.pages)]
 

@@ -18,6 +18,9 @@ export type DocumentInfo = {
   created_at: string;
 };
 
+/** Still waiting on (or being processed by) the indexing worker. */
+export const isIndexing = (doc: DocumentInfo) => doc.status === "pending" || doc.status === "processing";
+
 export type Source = {
   id: number;
   document_id: string;
@@ -69,10 +72,14 @@ async function errorMessage(res: Response): Promise<string> {
   return `요청 실패 (${res.status})`;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init);
+async function ensureOk(res: Response): Promise<void> {
   if (res.status === 401) throw new UnauthorizedError(await errorMessage(res));
   if (!res.ok) throw new Error(await errorMessage(res));
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, init);
+  await ensureOk(res);
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
@@ -133,8 +140,8 @@ export async function* streamChat(
   signal: AbortSignal,
 ): AsyncGenerator<ChatEvent> {
   const res = await fetch("/api/chat", { ...json(body), signal });
-  if (res.status === 401) throw new UnauthorizedError(await errorMessage(res));
-  if (!res.ok || !res.body) throw new Error(await errorMessage(res));
+  await ensureOk(res);
+  if (!res.body) throw new Error("응답 스트림이 비어 있습니다.");
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
