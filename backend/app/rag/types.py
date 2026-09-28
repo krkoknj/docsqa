@@ -1,4 +1,8 @@
-from typing import NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict
+
+RetrievalMode = Literal["vector", "keyword", "hybrid"]
+# "cross-encoder" is eval only: it needs the `eval` dependency group.
+RerankerName = Literal["none", "llm", "cross-encoder"]
 
 
 class Source(TypedDict):

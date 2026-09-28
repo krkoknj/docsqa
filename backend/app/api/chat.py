@@ -18,19 +18,16 @@ Emits Server-Sent Events:
 
 import json
 import logging
-from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from langgraph.graph.state import CompiledStateGraph
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sse_starlette import EventSourceResponse, ServerSentEvent
 
 from app.auth import CurrentUser
-from app.config import Settings, get_settings
 from app.db import Database
-from app.deps import get_db, get_graph
+from app.deps import DbDep, GraphDep, SettingsDep
 from app.rag.graph import to_messages
 from app.rag.stream import stream_events
 from app.schemas import ChatRequest
@@ -104,13 +101,7 @@ async def save_message(db: Database, conversation_id: UUID, role: str, content: 
 
 
 @router.post("")
-async def chat(
-    req: ChatRequest,
-    user: CurrentUser,
-    db: Annotated[Database, Depends(get_db)],
-    graph: Annotated[CompiledStateGraph, Depends(get_graph)],
-    settings: Annotated[Settings, Depends(get_settings)],
-):
+async def chat(req: ChatRequest, user: CurrentUser, db: DbDep, graph: GraphDep, settings: SettingsDep):
     async with db.engine.begin() as conn:
         document_ids = await searchable_document_ids(conn, user.id, req.document_ids)
         conversation_id, title, history = await load_or_create_conversation(

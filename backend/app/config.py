@@ -2,6 +2,8 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.rag.types import RerankerName, RetrievalMode
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -38,12 +40,10 @@ class Settings(BaseSettings):
     chunk_size: int = 400
     chunk_overlap: int = 80
     retrieval_k: int = 4
-    # "vector" | "keyword" | "hybrid"
-    retrieval_mode: str = "hybrid"
-    # "none" | "llm" | "cross-encoder" (eval only: needs the `eval` dependency group).
+    retrieval_mode: RetrievalMode = "hybrid"
     # "none" by default: in eval, the LLM reranker made retrieval Hit@1 perfect but gave no
     # end-to-end gain (the grade node already filters chunks) while adding ~1.5s per answer.
-    reranker: str = "none"
+    reranker: RerankerName = "none"
     retrieval_candidates: int = 20
     rerank_candidates: int = 12
     reranker_cache_dir: str = ".cache/flashrank"

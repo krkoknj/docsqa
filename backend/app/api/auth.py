@@ -1,20 +1,14 @@
-from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from app.auth import CurrentUser, clear_session_cookie, hash_password, set_session_cookie, verify_password
-from app.config import Settings, get_settings
-from app.db import Database
-from app.deps import get_db
+from app.deps import DbDep, SettingsDep
 from app.schemas import Credentials, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-DbDep = Annotated[Database, Depends(get_db)]
-SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)

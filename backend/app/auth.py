@@ -9,9 +9,8 @@ from fastapi import Depends, HTTPException, Request, Response, status
 from pwdlib import PasswordHash
 from sqlalchemy import text
 
-from app.config import Settings, get_settings
-from app.db import Database
-from app.deps import get_db
+from app.config import Settings
+from app.deps import DbDep, SettingsDep
 from app.schemas import UserOut
 
 _hasher = PasswordHash.recommended()  # argon2id
@@ -55,11 +54,7 @@ def clear_session_cookie(response: Response, settings: Settings) -> None:
 _UNAUTHORIZED = HTTPException(status.HTTP_401_UNAUTHORIZED, "로그인이 필요합니다.")
 
 
-async def get_current_user(
-    request: Request,
-    db: Annotated[Database, Depends(get_db)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> UserOut:
+async def get_current_user(request: Request, db: DbDep, settings: SettingsDep) -> UserOut:
     token = request.cookies.get(settings.session_cookie)
     if not token:
         raise _UNAUTHORIZED

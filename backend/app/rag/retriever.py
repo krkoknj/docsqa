@@ -10,7 +10,6 @@ ranking functions.
 
 import time
 from dataclasses import dataclass, field
-from typing import Literal
 
 from langchain_core.documents import Document
 from langchain_postgres import PGVectorStore
@@ -19,8 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.rag.rerank import Reranker
 from app.rag.tokenize import to_tsquery
+from app.rag.types import RetrievalMode
 
-RetrievalMode = Literal["vector", "keyword", "hybrid"]
 RRF_K = 60
 
 
