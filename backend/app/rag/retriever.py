@@ -68,16 +68,17 @@ class HybridRetriever:
         return self.mode + (f"+{self.reranker.name}" if self.reranker else "")
 
     async def search(self, query: str, k: int, document_ids: list[str] | None = None) -> RetrievalResult:
+        """document_ids=None searches every chunk (eval only); an empty list searches nothing."""
+        if document_ids is not None and not document_ids:
+            return RetrievalResult(candidates=[])
         timings: dict[str, float] = {}
         vector_docs: list[Document] = []
         keyword_docs: list[Document] = []
 
         start = time.perf_counter()
         if self.mode in ("vector", "hybrid"):
-            filter_ = {"document_id": {"$in": document_ids}} if document_ids else None
-            results = await self.vector_store.asimilarity_search_with_score(
-                query, k=self.candidates, filter=filter_
-            )
+            filter_ = {"document_id": {"$in": document_ids}} if document_ids is not None else None
+            results = await self.vector_store.asimilarity_search_with_score(query, k=self.candidates, filter=filter_)
             vector_docs = [doc for doc, _ in results]
             timings["vector"] = (time.perf_counter() - start) * 1000
 
@@ -103,7 +104,7 @@ class HybridRetriever:
         tsquery = to_tsquery(query)
         if not tsquery:
             return []
-        doc_filter = "AND document_id = ANY(CAST(:ids AS uuid[]))" if document_ids else ""
+        doc_filter = "AND document_id = ANY(CAST(:ids AS uuid[]))" if document_ids is not None else ""
         sql = text(
             f"""
             SELECT langchain_id, content, document_id, source, page, chunk_index,
@@ -115,7 +116,7 @@ class HybridRetriever:
             """
         )
         params = {"q": tsquery, "limit": limit}
-        if document_ids:
+        if document_ids is not None:
             params["ids"] = document_ids
         async with self.engine.connect() as conn:
             rows = (await conn.execute(sql, params)).all()

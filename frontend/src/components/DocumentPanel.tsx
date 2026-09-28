@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { deleteDocument, uploadDocument, type DocumentInfo } from "@/lib/api";
+import { deleteDocument, retryDocument, uploadDocument, type DocumentInfo, type DocumentStatus } from "@/lib/api";
 
 type Props = {
   documents: DocumentInfo[];
@@ -21,6 +21,13 @@ const CARD_STYLES = [
   "bg-flame text-cream -rotate-[0.75deg]",
   "bg-blush text-ink rotate-[0.5deg]",
 ];
+
+const STATUS_LABEL: Record<DocumentStatus, string> = {
+  pending: "색인 대기 중…",
+  processing: "색인 중…",
+  ready: "준비됨",
+  failed: "색인 실패",
+};
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -53,6 +60,16 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
     onChange();
   }
 
+  async function handleRetry(doc: DocumentInfo) {
+    setError(null);
+    try {
+      await retryDocument(doc.id);
+      onChange();
+    } catch (e) {
+      setError(`${doc.filename}: ${(e as Error).message}`);
+    }
+  }
+
   async function handleDelete(doc: DocumentInfo) {
     setPendingDelete(null);
     setDeleting(doc.id);
@@ -68,11 +85,7 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
   }
 
   return (
-    <aside className="flex w-full flex-col gap-6 p-5 md:h-full md:w-[22rem] md:p-7">
-      <header>
-        <p className="text-5xl leading-none font-bold tracking-[-0.04em]">docsqa</p>
-        <p className="mt-3 text-sm font-light text-cream-dim">문서와 대화가 만나는 공간</p>
-      </header>
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
 
       <button
         type="button"
@@ -96,7 +109,7 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
       >
         {uploading ? (
           <>
-            <span className="text-lg font-bold">인덱싱 중…</span>
+            <span className="text-lg font-bold">업로드 중…</span>
             <span className="w-full truncate text-sm font-light animate-pulse">{uploading}</span>
           </>
         ) : (
@@ -142,36 +155,61 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
           )}
           {documents.map((doc, i) => {
             const selected = selectedIds.has(doc.id);
+            const ready = doc.status === "ready";
             return (
               <li
                 key={doc.id}
-                className={`group relative rounded-[1.5rem] transition-transform hover:rotate-0 ${CARD_STYLES[i % CARD_STYLES.length]} ${
-                  selected ? "ring-2 ring-cream ring-offset-2 ring-offset-ink" : ""
-                }`}
+                className={`group relative rounded-[1.5rem] transition-transform hover:rotate-0 ${
+                  ready ? CARD_STYLES[i % CARD_STYLES.length] : "border border-dashed border-ink-line text-cream"
+                } ${selected ? "ring-2 ring-cream ring-offset-2 ring-offset-ink" : ""}`}
               >
-                <label className="flex cursor-pointer items-center gap-3 py-3.5 pr-14 pl-5">
+                <label
+                  className={`flex items-center gap-3 py-3.5 pr-14 pl-5 ${ready ? "cursor-pointer" : "cursor-default"}`}
+                >
                   <input
                     type="checkbox"
                     checked={selected}
+                    disabled={!ready}
                     onChange={() => onToggle(doc.id)}
                     className="peer sr-only"
                     aria-label={`${doc.filename} 검색 범위에 포함`}
                   />
                   <span
                     aria-hidden
-                    className="grid size-5 shrink-0 place-items-center rounded-full border-2 border-current text-[10px] font-bold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2"
+                    className={`grid size-5 shrink-0 place-items-center rounded-full border-2 border-current text-[10px] font-bold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
+                      doc.status === "pending" || doc.status === "processing" ? "animate-spin border-t-transparent" : ""
+                    } ${doc.status === "failed" ? "border-flame text-flame" : ""}`}
                   >
-                    {selected ? "✓" : ""}
+                    {selected ? "✓" : doc.status === "failed" ? "!" : ""}
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate font-bold" title={doc.filename}>
                       {doc.filename}
                     </span>
-                    <span className="block text-xs font-light opacity-80">
-                      {formatSize(doc.size_bytes)} · 청크 {doc.chunk_count}개
-                    </span>
+                    {ready ? (
+                      <span className="block text-xs font-light opacity-80">
+                        {formatSize(doc.size_bytes)} · 청크 {doc.chunk_count}개
+                      </span>
+                    ) : doc.status === "failed" ? (
+                      <span className="block text-xs font-light text-flame" title={doc.error ?? undefined}>
+                        {doc.error ?? "색인 실패"}
+                      </span>
+                    ) : (
+                      <span className="block animate-pulse text-xs font-light text-cream-dim">
+                        {STATUS_LABEL[doc.status]}
+                      </span>
+                    )}
                   </span>
                 </label>
+                {doc.status === "failed" && pendingDelete !== doc.id && deleting !== doc.id && (
+                  <button
+                    type="button"
+                    onClick={() => handleRetry(doc)}
+                    className="mb-3 ml-13 rounded-full border border-ink-line px-3 py-1 text-xs font-bold hover:border-cream"
+                  >
+                    다시 시도
+                  </button>
+                )}
                 {deleting === doc.id ? (
                   <span className="absolute top-1/2 right-4 -translate-y-1/2 animate-pulse text-xs font-bold">
                     삭제 중…
@@ -213,6 +251,6 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
           })}
         </ul>
       </div>
-    </aside>
+    </div>
   );
 }

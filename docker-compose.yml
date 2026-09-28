@@ -17,10 +17,21 @@ services:
   backend:
     build: ./backend
     env_file: ./backend/.env
-    environment:
+    environment: &backend-env
       DATABASE_URL: postgresql+asyncpg://rag:rag@db:5432/rag
+      EMBEDDED_WORKER: "false"  # indexing runs in the worker service below
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Indexing worker: same image, different command. Scale with `docker compose up --scale worker=3`.
+  worker:
+    build: ./backend
+    env_file: ./backend/.env
+    environment: *backend-env
+    command: ["uv", "run", "--no-sync", "python", "-m", "app.worker"]
     depends_on:
       db:
         condition: service_healthy
@@ -29,7 +40,7 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
+        BACKEND_URL: http://backend:8000  # /api/* is proxied here by Next.js
     ports:
       - "3000:3000"
     depends_on:

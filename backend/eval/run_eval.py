@@ -150,15 +150,12 @@ def render_report(args, chunk_count: int, n_answerable: int, results: list[Confi
     lines = [
         f"# RAG 평가 결과 — {datetime.now():%Y-%m-%d %H:%M}",
         "",
-        f"- 코퍼스: `samples/*.md` → 청크 {chunk_count}개 (chunk_size={args.chunk_size}, "
-        f"overlap={args.chunk_overlap})",
+        f"- 코퍼스: `samples/*.md` → 청크 {chunk_count}개 (chunk_size={args.chunk_size}, overlap={args.chunk_overlap})",
         f"- 질문: 답이 있는 질문 {n_answerable}개로 검색 평가, k={args.k}",
         "",
         "## 검색 품질",
         "",
-        "| 구성 | Hit@1 | Hit@k | MRR | "
-        + " | ".join(f"Hit@k ({t})" for t in types)
-        + " | 검색 지연 (중앙값) |",
+        "| 구성 | Hit@1 | Hit@k | MRR | " + " | ".join(f"Hit@k ({t})" for t in types) + " | 검색 지연 (중앙값) |",
         "|---|---|---|---|" + "---|" * len(types) + "---|",
     ]
     for r in results:
@@ -189,9 +186,7 @@ def render_report(args, chunk_count: int, n_answerable: int, results: list[Confi
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--configs", default=DEFAULT_CONFIGS)
     parser.add_argument("--chunk-size", type=int, default=400)
     parser.add_argument("--chunk-overlap", type=int, default=80)
@@ -202,7 +197,7 @@ async def main() -> None:
 
     base = get_settings()
     settings = base.model_copy(update={"vector_table": f"eval_chunks_{args.chunk_size}_{args.chunk_overlap}"})
-    db = Database(settings)
+    db = Database(settings, link_documents=False)  # eval chunks have no document rows
     await db.init()
     chunk_count = await ensure_index(db, settings.vector_table, args.chunk_size, args.chunk_overlap)
 
@@ -216,9 +211,7 @@ async def main() -> None:
         from openai import AsyncOpenAI
         from ragas.llms import llm_factory
 
-        ragas_llm = llm_factory(
-            settings.openai_judge_model, client=AsyncOpenAI(api_key=settings.openai_api_key)
-        )
+        ragas_llm = llm_factory(settings.openai_judge_model, client=AsyncOpenAI(api_key=settings.openai_api_key))
 
     results = []
     for config in args.configs.split(","):

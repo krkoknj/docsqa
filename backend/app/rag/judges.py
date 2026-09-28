@@ -82,8 +82,7 @@ class LLMJudges:
             [
                 SystemMessage(REWRITE_PROMPT),
                 HumanMessage(
-                    f"대화 맥락:\n{_history_text(history)}\n\n"
-                    f"원래 질문: {question}\n이전 검색어: {previous_query}"
+                    f"대화 맥락:\n{_history_text(history)}\n\n원래 질문: {question}\n이전 검색어: {previous_query}"
                 ),
             ]
         )

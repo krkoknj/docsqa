@@ -1,6 +1,8 @@
+import asyncio
+
 from langchain_core.documents import Document
 
-from app.rag.retriever import RRF_K, fuse
+from app.rag.retriever import RRF_K, HybridRetriever, fuse
 from app.rag.tokenize import to_tsquery, tokenize
 
 
@@ -39,3 +41,15 @@ def test_fuse_with_single_list_preserves_order():
     fused = fuse([], [doc("x"), doc("y")])
     assert [c.doc.id for c in fused] == ["x", "y"]
     assert fused[0].vector_rank is None
+
+
+def test_empty_document_scope_searches_nothing():
+    """A user with no documents must never fall through to an unfiltered search."""
+
+    class ExplodingStore:
+        async def asimilarity_search_with_score(self, *args, **kwargs):
+            raise AssertionError("searched without a document filter")
+
+    retriever = HybridRetriever(ExplodingStore(), engine=None, table="chunks", mode="hybrid")
+    result = asyncio.run(retriever.search("anything", k=4, document_ids=[]))
+    assert result.candidates == []

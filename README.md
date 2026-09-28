@@ -1,25 +1,32 @@
 # DocsQA — 문서 기반 RAG 질의응답 에이전트
 
+[![CI](https://github.com/krkoknj/docsqa/actions/workflows/ci.yml/badge.svg)](https://github.com/krkoknj/docsqa/actions/workflows/ci.yml)
+
 PDF·Markdown 문서를 업로드하면, 문서 내용을 근거로 출처를 인용하며 답변하는 풀스택 AI 애플리케이션입니다.
 
 - **Frontend**: Next.js 16 (App Router) · TypeScript · Tailwind CSS v4
 - **Backend**: FastAPI · LangGraph · LangChain · OpenAI
 - **Database**: PostgreSQL + pgvector
-- **Infra**: Docker Compose
+- **Infra**: Docker Compose · GitHub Actions (CI, GHCR 이미지 배포) · Caddy (HTTPS)
 
 ## 아키텍처
 
 ```
-┌──────────────┐   REST (업로드/목록/삭제)   ┌──────────────────────────────┐
-│  Next.js     │ ─────────────────────────▶ │  FastAPI + LangGraph          │
-│  - 스트리밍 채팅 │   SSE (step/sources/token)  │  (Corrective RAG 그래프)       │
-│  - 단계 타임라인 │ ◀───────────────────────── │                              │
-│  - 출처·근거 표시 │                            └──────────────┬───────────────┘
-└──────────────┘                                            │ asyncpg
-                                              ┌─────────────▼───────────┐
-                                              │ PostgreSQL + pgvector   │
-                                              └─────────────────────────┘
+ 브라우저 ── https ──▶ Next.js ── /api/* 프록시 ──▶ FastAPI (API)  ─── SSE 스트리밍 채팅
+                     (같은 출처라 httpOnly            │  · 로그인 (JWT 쿠키)
+                      세션 쿠키가 그대로 동작)          │  · LangGraph Corrective RAG
+                                                     │  · 대화 저장
+                                                     ▼
+                                          PostgreSQL + pgvector ◀── 색인 워커 (별도 프로세스)
+                                          users · documents(=작업 큐)     SKIP LOCKED로 작업을 가져와
+                                          chunks · conversations         파싱 → 청킹 → 임베딩
 ```
+
+- **인증:** 이메일/비밀번호(argon2id) + JWT를 담은 **httpOnly, SameSite=Lax 쿠키**. 브라우저는 Next.js하고만 통신하고 `/api/*`는 백엔드로 프록시되므로, 쿠키가 항상 퍼스트 파티로 동작합니다.
+- **사용자별 데이터 격리:** 문서, 대화, 검색이 모두 소유자 기준으로 제한됩니다. 사용자에게 문서가 없으면 검색 범위가 "전체"가 아니라 **"없음"**이 되도록 해서, 다른 사용자의 청크가 검색될 여지를 막았습니다. 통합 테스트로 검증합니다.
+- **비동기 색인 큐:** 업로드는 파일을 저장하고 곧바로 `202`를 반환합니다. 색인 워커가 `documents` 테이블을 큐로 사용해 `FOR UPDATE SKIP LOCKED`로 작업을 가져가므로, **Redis 없이** 워커를 여러 개 띄울 수 있습니다. 재시도 횟수 제한, 멱등한 재색인, 죽은 워커의 작업 회수를 지원합니다.
+- **데이터 무결성:** 청크는 `ON DELETE CASCADE` FK로 문서에 연결되어, 문서를 지우면 청크와 원본 파일이 함께 삭제됩니다. 스키마는 advisory lock으로 직렬화된 버전 마이그레이션으로 관리합니다.
+- **대화 저장:** 대화와 메시지(출처, 근거 검증 결과 포함)를 서버에 저장합니다. 이전 대화 내용은 클라이언트가 보낸 값을 믿지 않고 DB에서 불러옵니다.
 
 ### LangGraph 파이프라인 (Corrective RAG + Self-RAG)
 
@@ -54,6 +61,7 @@ query ─┬─ 벡터 검색   (pgvector 코사인 거리, 상위 20) ──┐
 ### SSE 이벤트 규약 (`POST /api/chat`)
 | event | data |
 |---|---|
+| `conversation` | `{ id, title }`, 첫 이벤트. 새 질문이면 서버가 대화를 만들어 알려줌 |
 | `step` | `{ node, status: "start" \| "end", detail }`, 노드는 반복될 수 있음 |
 | `sources` | `[{ id, document_id, source, page, score, content, relevant? }]`, 검색 직후 1번, 평가 후 `relevant`를 붙여 다시 1번 |
 | `reset` | `{}`, 근거 검증 실패로 지금까지 받은 답변을 버리고 재생성 |
@@ -106,34 +114,55 @@ uv run --group eval python -m eval.run_eval --e2e    # + 전체 파이프라인 
 
 ### 1. 환경 변수
 ```bash
-cp backend/.env.example backend/.env         # OPENAI_API_KEY 입력
+cp backend/.env.example backend/.env         # OPENAI_API_KEY, JWT_SECRET 입력
 cp frontend/.env.example frontend/.env.local
 ```
 
 ### 2-A. 전체를 Docker로 실행 (가장 간단)
 ```bash
-docker compose up -d --build     # db + backend + frontend
-docker compose logs -f backend   # 로그 보기
-docker compose down              # 종료 (DB 데이터는 볼륨에 유지)
+docker compose up -d --build            # db + backend + worker + frontend
+docker compose up -d --scale worker=3   # 색인 워커 늘리기
+docker compose logs -f backend worker   # 로그 보기
+docker compose down                     # 종료 (DB 데이터는 볼륨에 유지)
 ```
-- 앱: http://localhost:3000 · API 문서: http://localhost:8000/docs
+- 앱: http://localhost:3000 (회원가입 후 사용) · API 문서: http://localhost:8000/docs
 
 ### 2-B. 로컬 개발 (코드 수정 시 자동 반영)
 ```bash
 docker compose up -d db                      # pgvector만 실행
-cd backend && uv sync && uv run uvicorn app.main:app --reload
+cd backend && uv sync && uv run uvicorn app.main:app --reload   # 색인 워커가 API 안에서 함께 실행됨
 cd frontend && npm install && npm run dev
 ```
 
 ## 테스트
 ```bash
-cd backend && uv run pytest        # 청킹, SSE 규약, 그래프 분기 전체 (Fake LLM/Judge, DB·API 키 불필요)
-cd backend && uv run ruff check .
-cd frontend && npm run lint && npx tsc --noEmit
+docker compose up -d db
+cd backend && uv run pytest
+cd backend && uv run ruff check . && uv run ruff format --check .
+cd frontend && npm run lint && npm run typecheck
 ```
+- **단위 테스트:** 청킹, 토크나이저, RRF, 그래프의 모든 분기(가짜 LLM/평가기 사용)
+- **통합 테스트:** 임시 DB(`rag_test`)에 실제 앱을 띄워 검증합니다. 회원가입·로그인, 사용자 간 격리, 색인 워커, 실패 후 재시도, 삭제 cascade, 대화 저장이 대상이고, 모델은 가짜라 API 키가 필요 없습니다. Postgres가 없으면 자동으로 건너뜁니다.
+- **CI:** GitHub Actions가 push와 PR마다 pgvector 서비스 컨테이너를 붙여 위 테스트 전체와 프론트엔드 빌드, Docker 이미지 빌드를 실행합니다.
+
+## 배포
+
+`main`에서 CI가 통과하면 [release.yml](.github/workflows/release.yml)이 Docker 이미지를 GitHub Container Registry에 게시합니다(`ghcr.io/krkoknj/docsqa-backend`, `docsqa-frontend`). Docker가 있는 서버라면 어디든 배포할 수 있습니다.
+
+```bash
+cp deploy/.env.example deploy/.env   # 도메인, OpenAI 키, JWT_SECRET, DB 비밀번호
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d
+```
+- 외부에는 Caddy만 노출되고, Let's Encrypt로 HTTPS 인증서가 자동 발급됩니다. 쿠키는 `Secure`로 설정됩니다.
+- 필수 비밀값이 비어 있으면 compose가 시작 단계에서 오류를 냅니다.
 
 ## 로드맵
 - [x] **1단계 MVP**: 업로드·인덱싱, LangGraph RAG, SSE 스트리밍 채팅, 출처 인용 UI
 - [x] **2단계 에이전트화**: 문서 관련성 평가 → 질문 재작성/재검색 → 환각 검사 및 재생성 (Corrective RAG + Self-RAG)
 - [x] **3단계 검색 품질**: 하이브리드 검색(한글 bigram 전문 검색 + 벡터, RRF), 리랭커 비교, 평가 데이터셋 + RAGAS
-- [ ] **4단계 완성도**: 인증, 비동기 인덱싱 큐, 대화 저장(LangGraph checkpointer), CI/CD, 배포
+- [x] **4단계 완성도**: 회원가입·로그인, 사용자별 데이터 격리, Postgres 기반 비동기 색인 큐, 대화 저장, 통합 테스트, CI/CD(GHCR), 프로덕션 compose + HTTPS
+
+### 다음에 개선할 점
+- **이어지는 질문의 검색어:** "그 에러는 어떻게 해결해?"처럼 앞 대화를 가리키는 질문은 그대로 검색되어 관련 문서를 놓칠 수 있습니다. 대화 맥락을 반영해 검색어를 다시 쓰는 단계를 추가할 계획입니다.
+- 로그인 시도 횟수 제한(rate limit), 비밀번호 재설정
+- 대화 저장에 LangGraph checkpointer 대신 전용 테이블을 쓴 이유: 사이드바 목록 조회와 사용자별 권한 검사가 SQL 한 번으로 끝나고, 그래프는 한 번의 질문을 처리하는 단위로 단순하게 유지할 수 있기 때문입니다.
