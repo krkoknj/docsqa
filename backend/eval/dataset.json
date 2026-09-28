@@ -1,0 +1,44 @@
+[
+  {"id": "hb-01", "type": "keyword", "question": "SEV2 장애가 나면 얼마 안에 처음 대응해야 해?", "reference": "SEV2 장애의 최초 대응 시간은 30분 이내입니다.", "evidence": "| SEV2 | 핵심 기능"},
+  {"id": "hb-02", "type": "paraphrase", "question": "금요일 늦은 오후에 배포해도 되나요?", "reference": "금요일 오후 3시 이후에는 배포가 금지됩니다(금요일 평화 규칙). 핫픽스는 CTO 또는 당직자 승인 시 가능합니다.", "evidence": "금요일 오후 3시 이후에는 배포를 금지"},
+  {"id": "hb-03", "type": "paraphrase", "question": "PR을 머지하려면 승인이 몇 명 필요해?", "reference": "최소 2명의 승인이 필요하며, 문서만 수정한 PR은 1명의 승인으로 충분합니다.", "evidence": "최소 2명의 승인"},
+  {"id": "hb-04", "type": "paraphrase", "question": "카나리 배포는 트래픽을 어떤 순서로 늘려?", "reference": "트래픽의 5% → 25% → 100% 순서로 확대하며, 각 단계는 최소 15분간 유지합니다.", "evidence": "5% → 25% → 100%"},
+  {"id": "hb-05", "type": "keyword", "question": "당직 수당은 얼마야?", "reference": "당직 수당은 주당 20만 원이며, 야간에 실제 호출되면 건당 5만 원이 추가됩니다.", "evidence": "주당 20만 원"},
+  {"id": "hb-06", "type": "paraphrase", "question": "책상에서 화분을 키우면 추가로 받는 돈이 있어?", "reference": "사무실 책상에서 식물을 키우는 직원에게 월 1만 원의 초록 수당을 지급합니다.", "evidence": "초록 수당"},
+  {"id": "hb-07", "type": "keyword", "question": "코어타임이 언제야?", "reference": "코어타임은 오전 11시부터 오후 4시까지입니다.", "evidence": "코어타임은"},
+  {"id": "hb-08", "type": "paraphrase", "question": "개발 서버 접속용 VPN 설정 파일은 누구에게 받아야 해?", "reference": "IT팀 김도윤 매니저에게 요청하면 됩니다.", "evidence": "김도윤 매니저"},
+  {"id": "hb-09", "type": "distractor", "question": "신입 사원은 언제부터 당직을 서?", "reference": "입사 후 4주 동안 당직에서 제외되고 5주차부터 당직 순환에 참여합니다.", "evidence": "4주 동안 당직에서 제외"},
+  {"id": "hb-10", "type": "keyword", "question": "리프넷 v4는 이미지 몇 장으로 학습했어?", "reference": "약 180만 장의 식물 이미지로 학습했습니다.", "evidence": "180만 장"},
+
+  {"id": "sec-01", "type": "keyword", "question": "사내 시스템 비밀번호 최소 길이는?", "reference": "비밀번호는 최소 14자 이상이어야 합니다.", "evidence": "최소 14자"},
+  {"id": "sec-02", "type": "paraphrase", "question": "로그인을 여러 번 틀리면 어떻게 돼?", "reference": "5회 연속 실패하면 계정이 30분간 잠깁니다.", "evidence": "30분간 잠깁니다"},
+  {"id": "sec-03", "type": "distractor", "question": "고객 개인정보가 유출되면 CISO에게 언제까지 보고해야 해?", "reference": "P1 보안 사고로 인지 후 1시간 이내에 CISO에게 보고해야 하며, 개인정보보호위원회에는 72시간 이내에 신고합니다.", "evidence": "CISO 보고"},
+  {"id": "sec-04", "type": "paraphrase", "question": "회사 노트북을 잃어버리면 언제까지 누구에게 알려야 해?", "reference": "2시간 이내에 보안팀(#security-help 채널)에 알려야 합니다.", "evidence": "`#security-help`"},
+  {"id": "sec-05", "type": "keyword", "question": "운영 DB 쓰기 권한은 어떤 등급이 필요해?", "reference": "L4 등급(CTO, 보안팀)이 필요하며, 쓰기 작업은 투맨 룰을 따릅니다.", "evidence": "운영 DB 쓰기 권한"},
+  {"id": "sec-06", "type": "paraphrase", "question": "회원이 탈퇴하면 고객 이메일은 언제 지워져?", "reference": "개인정보는 회원 탈퇴 후 30일 뒤 파기됩니다.", "evidence": "회원 탈퇴 후"},
+  {"id": "sec-07", "type": "keyword", "question": "Critical 등급 취약점을 신고하면 보상금은 얼마야?", "reference": "최대 500만 원입니다.", "evidence": "Critical: 최대"},
+  {"id": "sec-08", "type": "distractor", "question": "사내 시스템에 로그인할 때 SMS 인증을 써도 돼?", "reference": "안 됩니다. SMS 인증은 2025년 7월부터 금지되었고, 하드웨어 보안 키나 OTP 앱을 사용해야 합니다.", "evidence": "SMS 인증은 2025년 7월부터 금지"},
+
+  {"id": "api-01", "type": "keyword", "question": "PLT-E403 에러는 무슨 뜻이야?", "reference": "허용되지 않은 IP에서 요청했다는 뜻입니다(HTTP 403).", "evidence": "`PLT-E403`"},
+  {"id": "api-02", "type": "keyword", "question": "Sprout 요금제는 분당 몇 번 호출할 수 있어?", "reference": "분당 300회, 월간 20,000회 진단이 가능합니다.", "evidence": "| Sprout |"},
+  {"id": "api-03", "type": "paraphrase", "question": "파트너 API 키가 외부에 노출됐을 때 어떻게 해야 해?", "reference": "파트너 콘솔에서 즉시 키 회전(rotate)을 실행합니다. 이전 키는 24시간 동안 함께 동작한 뒤 폐기됩니다.", "evidence": "키 회전(rotate)"},
+  {"id": "api-04", "type": "paraphrase", "question": "웹훅 전송이 실패하면 몇 번 다시 보내?", "reference": "최대 5번, 1분·5분·30분·2시간·12시간 간격으로 재전송합니다.", "evidence": "최대 5번"},
+  {"id": "api-05", "type": "keyword", "question": "진단 API에 올릴 수 있는 이미지 최대 용량은?", "reference": "최대 8MB이며 JPEG 또는 PNG만 지원합니다.", "evidence": "최대 **8MB**"},
+  {"id": "api-06", "type": "distractor", "question": "파트너 API v1은 언제 종료됐어?", "reference": "v1 API는 2026년 6월 30일에 종료되었습니다.", "evidence": "v1 API는"},
+
+  {"id": "hr-01", "type": "keyword", "question": "리프레시 휴가는 언제 받을 수 있어?", "reference": "근속 3년마다 1회 10일을 받으며, 휴가비 100만 원이 함께 지급됩니다.", "evidence": "리프레시 휴가"},
+  {"id": "hr-02", "type": "paraphrase", "question": "못 쓴 연차를 다음 해로 넘길 수 있어?", "reference": "다음 해 3월 31일까지 최대 5일을 이월할 수 있습니다.", "evidence": "이월 한도"},
+  {"id": "hr-03", "type": "paraphrase", "question": "아는 사람을 개발자로 추천해서 입사하면 보상이 있어?", "reference": "수습 3개월을 통과하면 개발 직군 기준 300만 원의 추천 보상금을 지급합니다.", "evidence": "개발 직군 300만 원"},
+  {"id": "hr-04", "type": "distractor", "question": "재택 근무 장비를 사라고 지원금을 줘?", "reference": "입사 시 50만 원의 장비 지원금을 지급하고, 인터넷 요금은 월 3만 원까지 지원합니다.", "evidence": "장비 지원금"},
+  {"id": "hr-05", "type": "paraphrase", "question": "회사를 그만두려면 언제까지 말해야 해?", "reference": "희망 퇴사일 30일 전까지 리더와 인사팀에 알려야 합니다.", "evidence": "희망 퇴사일"},
+
+  {"id": "rel-01", "type": "keyword", "question": "PLT-2231 버그는 뭐였어?", "reference": "안드로이드 14에서 알림 권한을 거부하면 앱이 멈추던 문제로, v4.2.0에서 수정되었습니다.", "evidence": "PLT-2231"},
+  {"id": "rel-02", "type": "distractor", "question": "리프넷 v3에서 v4로 바뀌면서 정확도가 얼마나 올랐어?", "reference": "86.2%에서 91.4%로 올랐습니다.", "evidence": "86.2%"},
+  {"id": "rel-03", "type": "distractor", "question": "플랜티 마켓 출시 첫 달 거래 수수료는 얼마였어?", "reference": "출시 기념으로 첫 달은 0%였고, 이후 5%입니다.", "evidence": "첫 달 거래 수수료를 0%"},
+  {"id": "rel-04", "type": "paraphrase", "question": "인터넷이 안 될 때도 식물 진단을 할 수 있어?", "reference": "네, 기기 안의 경량 모델 리프넷 Lite로 진단하며 정확도는 약 78%입니다.", "evidence": "리프넷 Lite"},
+  {"id": "rel-05", "type": "keyword", "question": "지금 진단할 수 있는 식물은 몇 종이야?", "reference": "2,050종입니다.", "evidence": "2,050종"},
+
+  {"id": "none-01", "type": "unanswerable", "question": "네뷸라랩스의 작년 매출은 얼마야?", "reference": "문서에 해당 정보가 없습니다.", "evidence": null},
+  {"id": "none-02", "type": "unanswerable", "question": "플랜티 앱 프리미엄 구독료는 얼마야?", "reference": "문서에 해당 정보가 없습니다.", "evidence": null},
+  {"id": "none-03", "type": "unanswerable", "question": "네뷸라랩스 CTO의 이름은 뭐야?", "reference": "문서에 해당 정보가 없습니다.", "evidence": null}
+]
