@@ -1,8 +1,22 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
+
+
+class UserOut(BaseModel):
+    id: UUID
+    email: str
+    created_at: datetime
+
+
+class Credentials(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+
+DocumentStatus = Literal["pending", "processing", "ready", "failed"]
 
 
 class DocumentOut(BaseModel):
@@ -11,15 +25,34 @@ class DocumentOut(BaseModel):
     content_type: str
     size_bytes: int
     chunk_count: int
+    status: DocumentStatus
+    error: str | None
     created_at: datetime
 
 
-class ChatMessage(BaseModel):
+class ConversationOut(BaseModel):
+    id: UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class MessageOut(BaseModel):
+    id: int
     role: Literal["user", "assistant"]
     content: str
+    sources: list[dict[str, Any]] | None
+    grounded: bool | None
+    created_at: datetime
+
+
+class ConversationDetail(ConversationOut):
+    messages: list[MessageOut]
 
 
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
-    history: list[ChatMessage] = Field(default_factory=list, max_length=20)
+    # Omit to start a new conversation; history is loaded from the server, not trusted from the client.
+    conversation_id: UUID | None = None
+    # Restrict retrieval to these documents (must belong to the user). Omit to search all of them.
     document_ids: list[UUID] | None = None

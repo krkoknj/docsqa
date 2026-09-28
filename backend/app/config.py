@@ -18,6 +18,22 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Auth: a signed JWT in an httpOnly cookie. Set JWT_SECRET in any real deployment.
+    jwt_secret: str = "dev-insecure-secret-change-me-in-production"
+    jwt_expire_hours: int = 24 * 7
+    session_cookie: str = "docsqa_session"
+    cookie_secure: bool = False  # true behind HTTPS
+
+    # Indexing queue: run the worker inside the API process (handy for local dev),
+    # or as a separate process with `python -m app.worker` (docker-compose does this).
+    embedded_worker: bool = True
+    worker_poll_seconds: float = 1.0
+    max_index_attempts: int = 3
+    stale_job_minutes: int = 10
+
+    # Number of previous messages sent to the LLM as conversation history.
+    history_messages: int = 10
+
     # Tuned with eval/run_eval.py: 400/80 beat 1000/150 on Hit@1 (see eval/results).
     chunk_size: int = 400
     chunk_overlap: int = 80
