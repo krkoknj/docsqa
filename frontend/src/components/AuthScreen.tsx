@@ -35,8 +35,8 @@ export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user
           </h1>
         </header>
 
-        <form onSubmit={submit} className="flex flex-col gap-3 rounded-[2rem] bg-ink-soft p-6">
-          <div className="mb-2 flex gap-1 rounded-full bg-ink p-1" role="tablist">
+        <form onSubmit={submit} className="flex flex-col gap-3 rounded-[2rem] bg-panel p-6">
+          <div className="mb-2 flex gap-1 rounded-full bg-page p-1" role="tablist">
             {(["login", "signup"] as const).map((m) => (
               <button
                 key={m}
@@ -48,7 +48,7 @@ export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user
                   setError(null);
                 }}
                 className={`flex-1 rounded-full py-2 text-sm font-bold transition-colors ${
-                  mode === m ? "bg-cream text-ink" : "text-cream-dim hover:text-cream"
+                  mode === m ? "bg-ink text-cream" : "text-fg-dim hover:text-fg"
                 }`}
               >
                 {m === "login" ? "로그인" : "회원가입"}
@@ -64,7 +64,7 @@ export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-full border border-ink-line bg-transparent px-5 py-3 font-light outline-none focus:border-cream"
+              className="rounded-full border border-line bg-transparent px-5 py-3 font-light outline-none focus:border-fg"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-bold">
@@ -76,9 +76,9 @@ export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user
               autoComplete={isLogin ? "current-password" : "new-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-full border border-ink-line bg-transparent px-5 py-3 font-light outline-none focus:border-cream"
+              className="rounded-full border border-line bg-transparent px-5 py-3 font-light outline-none focus:border-fg"
             />
-            {!isLogin && <span className="px-2 text-xs font-light text-cream-dim">8자 이상</span>}
+            {!isLogin && <span className="px-2 text-xs font-light text-fg-dim">8자 이상</span>}
           </label>
 
           {error && <p className="rounded-2xl bg-flame px-4 py-3 text-sm text-cream">{error}</p>}

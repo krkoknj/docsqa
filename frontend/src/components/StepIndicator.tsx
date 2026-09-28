@@ -21,7 +21,7 @@ export function applyStep(steps: Step[], ev: StepEvent): Step[] {
 
 export default function StepIndicator({ steps }: { steps: Step[] }) {
   if (steps.length === 0) {
-    return <p className="text-xs font-bold text-cream-dim animate-pulse">준비 중…</p>;
+    return <p className="text-xs font-bold text-fg-dim animate-pulse">준비 중…</p>;
   }
   return (
     <ol className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="에이전트 진행 상태">
@@ -29,7 +29,7 @@ export default function StepIndicator({ steps }: { steps: Step[] }) {
         const { label, color } = NODES[step.node];
         return (
           <li key={i} className="flex max-w-full items-center gap-1.5">
-            {i > 0 && <span className="text-cream-dim">→</span>}
+            {i > 0 && <span className="text-fg-dim">→</span>}
             <span
               title={step.detail ?? undefined}
               className={`flex max-w-72 items-center gap-1.5 rounded-full border px-3 py-1 ${color} ${

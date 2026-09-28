@@ -104,7 +104,7 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
         className={`group flex flex-col items-start gap-1 rounded-[2rem] border px-6 py-5 text-left transition-all ${
           dragging
             ? "scale-[1.02] border-blush bg-blush text-ink"
-            : "border-ink-line hover:border-cream"
+            : "border-line hover:border-fg"
         } disabled:cursor-wait`}
       >
         {uploading ? (
@@ -116,11 +116,11 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
           <>
             <span className="flex w-full items-center justify-between text-lg font-bold">
               문서 올리기
-              <span className="grid size-8 place-items-center rounded-full bg-cream text-ink transition-transform group-hover:rotate-90">
+              <span className="grid size-8 place-items-center rounded-full bg-ink text-cream transition-transform group-hover:rotate-90">
                 +
               </span>
             </span>
-            <span className={`text-sm font-light ${dragging ? "" : "text-cream-dim"}`}>
+            <span className={`text-sm font-light ${dragging ? "" : "text-fg-dim"}`}>
               끌어다 놓거나 클릭 · PDF, MD, TXT · 10MB
             </span>
           </>
@@ -143,13 +143,13 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex items-baseline justify-between px-1">
           <span className="text-sm font-bold">내 문서 {documents.length}</span>
-          <span className="text-xs font-light text-cream-dim">
+          <span className="text-xs font-light text-fg-dim">
             {selectedIds.size ? `${selectedIds.size}개 선택됨` : "전체에서 검색"}
           </span>
         </div>
         <ul className="-mx-1 flex max-h-56 flex-col gap-2.5 overflow-y-auto px-1 py-1 md:max-h-none">
           {documents.length === 0 && (
-            <li className="rounded-[1.5rem] border border-dashed border-ink-line px-5 py-4 text-sm font-light text-cream-dim">
+            <li className="rounded-[1.5rem] border border-dashed border-line px-5 py-4 text-sm font-light text-fg-dim">
               아직 문서가 없어요.
             </li>
           )}
@@ -160,8 +160,8 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
               <li
                 key={doc.id}
                 className={`group relative rounded-[1.5rem] transition-transform hover:rotate-0 ${
-                  ready ? CARD_STYLES[i % CARD_STYLES.length] : "border border-dashed border-ink-line text-cream"
-                } ${selected ? "ring-2 ring-cream ring-offset-2 ring-offset-ink" : ""}`}
+                  ready ? CARD_STYLES[i % CARD_STYLES.length] : "border border-dashed border-line text-fg"
+                } ${selected ? "ring-2 ring-fg ring-offset-2 ring-offset-page" : ""}`}
               >
                 <label
                   className={`flex items-center gap-3 py-3.5 pr-14 pl-5 ${ready ? "cursor-pointer" : "cursor-default"}`}
@@ -195,7 +195,7 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
                         {doc.error ?? "색인 실패"}
                       </span>
                     ) : (
-                      <span className="block animate-pulse text-xs font-light text-cream-dim">
+                      <span className="block animate-pulse text-xs font-light text-fg-dim">
                         {STATUS_LABEL[doc.status]}
                       </span>
                     )}
@@ -205,7 +205,7 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
                   <button
                     type="button"
                     onClick={() => handleRetry(doc)}
-                    className="mb-3 ml-13 rounded-full border border-ink-line px-3 py-1 text-xs font-bold hover:border-cream"
+                    className="mb-3 ml-13 rounded-full border border-line px-3 py-1 text-xs font-bold hover:border-fg"
                   >
                     다시 시도
                   </button>

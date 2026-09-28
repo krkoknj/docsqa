@@ -30,7 +30,7 @@ export default function Home() {
   }, []);
 
   if (user === undefined) {
-    return <main className="grid h-full place-items-center text-sm text-cream-dim">불러오는 중…</main>;
+    return <main className="grid h-full place-items-center text-sm text-fg-dim">불러오는 중…</main>;
   }
   if (user === null) return <AuthScreen onAuthenticated={setUser} />;
   return <Workspace key={user.id} user={user} onSignedOut={() => setUser(null)} />;
@@ -112,20 +112,20 @@ function Workspace({ user, onSignedOut }: { user: User; onSignedOut: () => void 
         <header className="flex items-start justify-between gap-3">
           <div>
             <p className="text-5xl leading-none font-bold tracking-[-0.04em]">docsqa</p>
-            <p className="mt-3 truncate text-sm font-light text-cream-dim" title={user.email}>
+            <p className="mt-3 truncate text-sm font-light text-fg-dim" title={user.email}>
               {user.email}
             </p>
           </div>
           <button
             type="button"
             onClick={signOut}
-            className="shrink-0 rounded-full border border-ink-line px-3 py-1.5 text-xs font-bold hover:border-cream"
+            className="shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-bold hover:border-fg"
           >
             로그아웃
           </button>
         </header>
 
-        <div className="flex gap-1 rounded-full bg-ink-soft p-1" role="tablist" aria-label="사이드바">
+        <div className="flex gap-1 rounded-full bg-panel p-1" role="tablist" aria-label="사이드바">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -134,7 +134,7 @@ function Workspace({ user, onSignedOut }: { user: User; onSignedOut: () => void 
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`flex-1 rounded-full py-2 text-sm font-bold transition-colors ${
-                tab === t.id ? "bg-cream text-ink" : "text-cream-dim hover:text-cream"
+                tab === t.id ? "bg-ink text-cream" : "text-fg-dim hover:text-fg"
               }`}
             >
               {t.label}
@@ -159,10 +159,10 @@ function Workspace({ user, onSignedOut }: { user: User; onSignedOut: () => void 
         )}
       </aside>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-ink-soft md:my-3 md:mr-3 md:rounded-[2.5rem]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-panel md:my-3 md:mr-3 md:rounded-[2.5rem]">
         {loadError && <p className="bg-mustard px-6 py-3 text-sm font-bold text-ink">{loadError}</p>}
         {documents.length > 0 && !documents.some((d) => d.status === "ready") && (
-          <p className="bg-ink px-6 py-3 text-sm text-cream-dim">
+          <p className="bg-page px-6 py-3 text-sm text-fg-dim">
             {indexing ? "문서를 색인하고 있어요. 끝나면 질문할 수 있습니다." : "검색할 수 있는 문서가 없어요."}
           </p>
         )}
