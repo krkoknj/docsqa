@@ -139,7 +139,7 @@ cd frontend && npm install && npm run dev
 docker compose up -d db
 cd backend && uv run pytest
 cd backend && uv run ruff check . && uv run ruff format --check .
-cd frontend && npm run lint && npx tsc --noEmit
+cd frontend && npm run lint && npm run typecheck
 ```
 - **단위 테스트:** 청킹, 토크나이저, RRF, 그래프의 모든 분기(가짜 LLM/평가기 사용)
 - **통합 테스트:** 임시 DB(`rag_test`)에 실제 앱을 띄워 검증합니다. 회원가입·로그인, 사용자 간 격리, 색인 워커, 실패 후 재시도, 삭제 cascade, 대화 저장이 대상이고, 모델은 가짜라 API 키가 필요 없습니다. Postgres가 없으면 자동으로 건너뜁니다.
