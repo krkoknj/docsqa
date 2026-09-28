@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { getConversation, streamChat, UnauthorizedError, type Source, type StoredMessage } from "@/lib/api";
+import AnswerMarkdown from "./AnswerMarkdown";
+import ErrorMessage from "./ErrorMessage";
 import SourceList from "./SourceList";
 import GroundingBadge from "./GroundingBadge";
 import StepIndicator, { applyStep, type Step } from "./StepIndicator";
@@ -31,11 +31,6 @@ type Props = {
 };
 
 const EXAMPLES = ["이 문서의 핵심 내용을 요약해줘", "중요한 규칙을 알려줘", "처음 읽는 사람이 알아야 할 것은?"];
-
-/** Turn "[1]" citations into links so they can be clicked to open the source. */
-function linkCitations(text: string) {
-  return text.replace(/\[(\d+)\](?!\()/g, "[\\[$1\\]](#source-$1)");
-}
 
 function fromStored(m: StoredMessage): Message {
   return { id: String(m.id), role: m.role, content: m.content, sources: m.sources ?? [], grounded: m.grounded };
@@ -87,6 +82,10 @@ export default function Chat({
   }, [messages]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  function showSource(messageId: string, sourceId: number | null) {
+    setActiveSource((s) => ({ ...s, [messageId]: sourceId }));
+  }
 
   function patch(id: string, update: (m: Message) => Partial<Message>) {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...update(m) } : m)));
@@ -161,30 +160,7 @@ export default function Chat({
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-8 md:px-8">
           {loading && <p className="mt-10 animate-pulse text-sm text-fg-dim">대화를 불러오는 중…</p>}
-          {!loading && messages.length === 0 && (
-            <div className="animate-rise mt-6 flex flex-col gap-8 md:mt-20">
-              <h1 className="text-4xl leading-[1.1] font-light tracking-[-0.03em] md:text-6xl">
-                docsqa는 문서가
-                <br />
-                <strong className="font-bold">직접 대답하는</strong> 공간입니다.
-              </h1>
-              <p className="max-w-md text-lg font-light text-fg-dim">
-                문서를 올리고 질문하세요. 모든 답변에는 근거가 된 원문이 함께 달립니다.
-              </p>
-              <div className="flex flex-wrap gap-2.5">
-                {EXAMPLES.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => send(q)}
-                    className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-blush hover:bg-blush hover:text-ink"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {!loading && messages.length === 0 && <EmptyState onAsk={send} />}
 
           {messages.map((m) =>
             m.role === "user" ? (
@@ -198,41 +174,18 @@ export default function Chat({
               <article key={m.id} className="animate-rise flex flex-col gap-4">
                 {m.steps && <StepIndicator steps={m.steps} />}
                 {m.content && (
-                  <div className="prose prose-docsqa max-w-none text-[16px] leading-relaxed font-light prose-strong:font-bold prose-code:rounded-md prose-code:bg-ink prose-code:px-1.5 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        a: ({ href, children }) =>
-                          href?.startsWith("#source-") ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveSource((s) => ({ ...s, [m.id]: Number(href.slice(8)) }))
-                              }
-                              className="mx-0.5 rounded-full bg-lilac px-1.5 align-super text-[10px] font-bold text-ink transition-transform hover:scale-110"
-                            >
-                              {children}
-                            </button>
-                          ) : (
-                            <a href={href} target="_blank" rel="noreferrer">
-                              {children}
-                            </a>
-                          ),
-                      }}
-                    >
-                      {linkCitations(m.content)}
-                    </ReactMarkdown>
-                    {m.streaming && (
-                      <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-full bg-flame align-middle" />
-                    )}
-                  </div>
+                  <AnswerMarkdown
+                    content={m.content}
+                    streaming={m.streaming}
+                    onCite={(id) => showSource(m.id, id)}
+                  />
                 )}
                 {!m.streaming && <GroundingBadge grounded={m.grounded} />}
-                {m.error && <p className="rounded-2xl bg-flame px-4 py-3 text-sm text-cream">{m.error}</p>}
+                {m.error && <ErrorMessage>{m.error}</ErrorMessage>}
                 <SourceList
                   sources={m.sources ?? []}
                   activeId={activeSource[m.id] ?? null}
-                  onSelect={(id) => setActiveSource((s) => ({ ...s, [m.id]: id }))}
+                  onSelect={(id) => showSource(m.id, id)}
                 />
               </article>
             ),
@@ -285,5 +238,32 @@ export default function Chat({
         </div>
       </form>
     </section>
+  );
+}
+
+function EmptyState({ onAsk }: { onAsk: (question: string) => void }) {
+  return (
+    <div className="animate-rise mt-6 flex flex-col gap-8 md:mt-20">
+      <h1 className="text-4xl leading-[1.1] font-light tracking-[-0.03em] md:text-6xl">
+        docsqa는 문서가
+        <br />
+        <strong className="font-bold">직접 대답하는</strong> 공간입니다.
+      </h1>
+      <p className="max-w-md text-lg font-light text-fg-dim">
+        문서를 올리고 질문하세요. 모든 답변에는 근거가 된 원문이 함께 달립니다.
+      </p>
+      <div className="flex flex-wrap gap-2.5">
+        {EXAMPLES.map((q) => (
+          <button
+            key={q}
+            type="button"
+            onClick={() => onAsk(q)}
+            className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-blush hover:bg-blush hover:text-ink"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { deleteDocument, retryDocument, uploadDocument, type DocumentInfo, type DocumentStatus } from "@/lib/api";
+import {
+  deleteDocument,
+  isIndexing,
+  retryDocument,
+  uploadDocument,
+  type DocumentInfo,
+  type DocumentStatus,
+} from "@/lib/api";
+import ErrorMessage from "./ErrorMessage";
 
 type Props = {
   documents: DocumentInfo[];
@@ -36,17 +44,14 @@ function formatSize(bytes: number) {
 }
 
 export default function DocumentPanel({ documents, selectedIds, onToggle, onChange }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
   // Two-step delete: first click arms the card, second click deletes.
   // (window.confirm is silently dismissed in some embedded browsers.)
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  async function handleFiles(files: FileList | null) {
-    if (!files?.length) return;
+  async function handleFiles(files: FileList) {
     setError(null);
     for (const file of Array.from(files)) {
       setUploading(file.name);
@@ -86,59 +91,9 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <UploadDropzone uploading={uploading} onFiles={handleFiles} />
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          handleFiles(e.dataTransfer.files);
-        }}
-        disabled={!!uploading}
-        className={`group flex flex-col items-start gap-1 rounded-[2rem] border px-6 py-5 text-left transition-all ${
-          dragging
-            ? "scale-[1.02] border-blush bg-blush text-ink"
-            : "border-line hover:border-fg"
-        } disabled:cursor-wait`}
-      >
-        {uploading ? (
-          <>
-            <span className="text-lg font-bold">업로드 중…</span>
-            <span className="w-full truncate text-sm font-light animate-pulse">{uploading}</span>
-          </>
-        ) : (
-          <>
-            <span className="flex w-full items-center justify-between text-lg font-bold">
-              문서 올리기
-              <span className="grid size-8 place-items-center rounded-full bg-ink text-cream transition-transform group-hover:rotate-90">
-                +
-              </span>
-            </span>
-            <span className={`text-sm font-light ${dragging ? "" : "text-fg-dim"}`}>
-              끌어다 놓거나 클릭 · PDF, MD, TXT · 10MB
-            </span>
-          </>
-        )}
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPT}
-        multiple
-        hidden
-        onChange={(e) => {
-          handleFiles(e.target.files);
-          e.target.value = "";
-        }}
-      />
-
-      {error && <p className="rounded-2xl bg-flame px-4 py-3 text-sm text-cream">{error}</p>}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex items-baseline justify-between px-1">
@@ -177,7 +132,7 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
                   <span
                     aria-hidden
                     className={`grid size-5 shrink-0 place-items-center rounded-full border-2 border-current text-[10px] font-bold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
-                      doc.status === "pending" || doc.status === "processing" ? "animate-spin border-t-transparent" : ""
+                      isIndexing(doc) ? "animate-spin border-t-transparent" : ""
                     } ${doc.status === "failed" ? "border-flame text-flame" : ""}`}
                   >
                     {selected ? "✓" : doc.status === "failed" ? "!" : ""}
@@ -252,5 +207,67 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
         </ul>
       </div>
     </div>
+  );
+}
+
+function UploadDropzone({ uploading, onFiles }: { uploading: string | null; onFiles: (files: FileList) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function accept(files: FileList | null) {
+    if (files?.length) onFiles(files);
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          accept(e.dataTransfer.files);
+        }}
+        disabled={!!uploading}
+        className={`group flex flex-col items-start gap-1 rounded-[2rem] border px-6 py-5 text-left transition-all ${
+          dragging ? "scale-[1.02] border-blush bg-blush text-ink" : "border-line hover:border-fg"
+        } disabled:cursor-wait`}
+      >
+        {uploading ? (
+          <>
+            <span className="text-lg font-bold">업로드 중…</span>
+            <span className="w-full truncate text-sm font-light animate-pulse">{uploading}</span>
+          </>
+        ) : (
+          <>
+            <span className="flex w-full items-center justify-between text-lg font-bold">
+              문서 올리기
+              <span className="grid size-8 place-items-center rounded-full bg-ink text-cream transition-transform group-hover:rotate-90">
+                +
+              </span>
+            </span>
+            <span className={`text-sm font-light ${dragging ? "" : "text-fg-dim"}`}>
+              끌어다 놓거나 클릭 · PDF, MD, TXT · 10MB
+            </span>
+          </>
+        )}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPT}
+        multiple
+        hidden
+        onChange={(e) => {
+          accept(e.target.files);
+          e.target.value = "";
+        }}
+      />
+    </>
   );
 }

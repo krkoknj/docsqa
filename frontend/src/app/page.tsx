@@ -5,8 +5,10 @@ import AuthScreen from "@/components/AuthScreen";
 import Chat from "@/components/Chat";
 import ConversationList from "@/components/ConversationList";
 import DocumentPanel from "@/components/DocumentPanel";
+import SegmentedTabs from "@/components/SegmentedTabs";
 import {
   getMe,
+  isIndexing,
   listConversations,
   listDocuments,
   logout,
@@ -80,7 +82,7 @@ function Workspace({ user, onSignedOut }: { user: User; onSignedOut: () => void 
   }, [refreshDocuments, refreshConversations]);
 
   // Poll while the indexing worker still has documents in flight.
-  const indexing = documents.some((d) => d.status === "pending" || d.status === "processing");
+  const indexing = documents.some(isIndexing);
   useEffect(() => {
     if (!indexing) return;
     const timer = setInterval(refreshDocuments, POLL_MS);
@@ -125,22 +127,7 @@ function Workspace({ user, onSignedOut }: { user: User; onSignedOut: () => void 
           </button>
         </header>
 
-        <div className="flex gap-1 rounded-full bg-panel p-1" role="tablist" aria-label="사이드바">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 rounded-full py-2 text-sm font-bold transition-colors ${
-                tab === t.id ? "bg-ink text-cream" : "text-fg-dim hover:text-fg"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs options={tabs} value={tab} onChange={setTab} label="사이드바" className="bg-panel" />
 
         {tab === "conversations" ? (
           <ConversationList

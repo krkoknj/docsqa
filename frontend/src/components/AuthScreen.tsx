@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import { login, signup, type User } from "@/lib/api";
+import ErrorMessage from "./ErrorMessage";
+import SegmentedTabs from "./SegmentedTabs";
+
+type Mode = "login" | "signup";
+
+const MODES: { id: Mode; label: string }[] = [
+  { id: "login", label: "로그인" },
+  { id: "signup", label: "회원가입" },
+];
 
 export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: User) => void }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,25 +45,15 @@ export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user
         </header>
 
         <form onSubmit={submit} className="flex flex-col gap-3 rounded-[2rem] bg-panel p-6">
-          <div className="mb-2 flex gap-1 rounded-full bg-page p-1" role="tablist">
-            {(["login", "signup"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                onClick={() => {
-                  setMode(m);
-                  setError(null);
-                }}
-                className={`flex-1 rounded-full py-2 text-sm font-bold transition-colors ${
-                  mode === m ? "bg-ink text-cream" : "text-fg-dim hover:text-fg"
-                }`}
-              >
-                {m === "login" ? "로그인" : "회원가입"}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabs
+            options={MODES}
+            value={mode}
+            onChange={(m) => {
+              setMode(m);
+              setError(null);
+            }}
+            className="mb-2 bg-page"
+          />
 
           <label className="flex flex-col gap-1.5 text-sm font-bold">
             이메일
@@ -81,7 +80,7 @@ export default function AuthScreen({ onAuthenticated }: { onAuthenticated: (user
             {!isLogin && <span className="px-2 text-xs font-light text-fg-dim">8자 이상</span>}
           </label>
 
-          {error && <p className="rounded-2xl bg-flame px-4 py-3 text-sm text-cream">{error}</p>}
+          {error && <ErrorMessage>{error}</ErrorMessage>}
 
           <button
             type="submit"

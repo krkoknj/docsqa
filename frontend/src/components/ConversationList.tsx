@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deleteConversation, type Conversation } from "@/lib/api";
+import ErrorMessage from "./ErrorMessage";
 
 type Props = {
   conversations: Conversation[];
@@ -46,7 +47,7 @@ export default function ConversationList({ conversations, activeId, onSelect, on
         <span className="grid size-8 place-items-center rounded-full bg-ink text-cream">+</span>
       </button>
 
-      {error && <p className="rounded-2xl bg-flame px-4 py-3 text-sm text-cream">{error}</p>}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
 
       <ul className="-mx-1 flex max-h-56 flex-col gap-1 overflow-y-auto px-1 py-1 md:max-h-none">
         {conversations.length === 0 && (
