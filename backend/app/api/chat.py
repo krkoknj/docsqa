@@ -134,4 +134,5 @@ async def chat(
             logger.exception("chat stream failed")
             yield sse("error", {"message": "답변 생성 중 오류가 발생했습니다."})
 
-    return EventSourceResponse(events())
+    # no-transform stops proxies (including Next.js's gzip) from buffering the stream until it ends.
+    return EventSourceResponse(events(), headers={"Cache-Control": "no-cache, no-transform"})

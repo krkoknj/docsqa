@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { streamChat, type HistoryMessage, type Source } from "@/lib/api";
+import { getConversation, streamChat, UnauthorizedError, type Source, type StoredMessage } from "@/lib/api";
 import SourceList from "./SourceList";
 import GroundingBadge from "./GroundingBadge";
 import StepIndicator, { applyStep, type Step } from "./StepIndicator";
@@ -13,13 +13,23 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  /** Only present for turns streamed in this session; stored messages don't keep the timeline. */
   steps?: Step[];
   grounded?: boolean | null;
   error?: string;
   streaming?: boolean;
 };
 
-const HISTORY_LIMIT = 10;
+type Props = {
+  conversationId: string | null;
+  documentIds: string[];
+  /** Called when the server creates a conversation for the first question. */
+  onConversationStarted: (id: string) => void;
+  /** Called after each answer finishes (to refresh the conversation list). */
+  onTurnComplete: () => void;
+  onUnauthorized: () => void;
+};
+
 const EXAMPLES = ["이 문서의 핵심 내용을 요약해줘", "중요한 규칙을 알려줘", "처음 읽는 사람이 알아야 할 것은?"];
 
 /** Turn "[1]" citations into links so they can be clicked to open the source. */
@@ -27,13 +37,50 @@ function linkCitations(text: string) {
   return text.replace(/\[(\d+)\](?!\()/g, "[\\[$1\\]](#source-$1)");
 }
 
-export default function Chat({ documentIds }: { documentIds: string[] }) {
+function fromStored(m: StoredMessage): Message {
+  return { id: String(m.id), role: m.role, content: m.content, sources: m.sources ?? [], grounded: m.grounded };
+}
+
+export default function Chat({
+  conversationId,
+  documentIds,
+  onConversationStarted,
+  onTurnComplete,
+  onUnauthorized,
+}: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
   const [activeSource, setActiveSource] = useState<Record<string, number | null>>({});
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // The conversation this component is currently showing. When the server creates a
+  // conversation mid-stream we record it here first, so the prop change doesn't reload it.
+  const shownIdRef = useRef<string | null>(conversationId);
   const isStreaming = messages.some((m) => m.streaming);
+
+  useEffect(() => {
+    if (conversationId === shownIdRef.current) return;
+    shownIdRef.current = conversationId;
+    abortRef.current?.abort();
+    setActiveSource({});
+    if (conversationId === null) {
+      setMessages([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    getConversation(conversationId)
+      .then((c) => !cancelled && setMessages(c.messages.map(fromStored)))
+      .catch((e) => {
+        if (e instanceof UnauthorizedError) onUnauthorized();
+        else if (!cancelled) setMessages([]);
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, onUnauthorized]);
 
   useEffect(() => {
     if (messages.length) bottomRef.current?.scrollIntoView({ block: "end" });
@@ -47,12 +94,7 @@ export default function Chat({ documentIds }: { documentIds: string[] }) {
 
   async function send(question: string) {
     question = question.trim();
-    if (!question || isStreaming) return;
-
-    const history: HistoryMessage[] = messages
-      .filter((m) => !m.error && m.content)
-      .slice(-HISTORY_LIMIT)
-      .map(({ role, content }) => ({ role, content }));
+    if (!question || isStreaming || loading) return;
 
     const assistantId = crypto.randomUUID();
     setMessages((prev) => [
@@ -66,11 +108,21 @@ export default function Chat({ documentIds }: { documentIds: string[] }) {
     abortRef.current = controller;
     try {
       const stream = streamChat(
-        { question, history, document_ids: documentIds.length ? documentIds : null },
+        {
+          question,
+          conversation_id: shownIdRef.current,
+          document_ids: documentIds.length ? documentIds : null,
+        },
         controller.signal,
       );
       for await (const ev of stream) {
         switch (ev.event) {
+          case "conversation":
+            if (shownIdRef.current !== ev.data.id) {
+              shownIdRef.current = ev.data.id;
+              onConversationStarted(ev.data.id);
+            }
+            break;
           case "step":
             patch(assistantId, (m) => ({ steps: applyStep(m.steps ?? [], ev.data) }));
             break;
@@ -93,12 +145,14 @@ export default function Chat({ documentIds }: { documentIds: string[] }) {
         }
       }
     } catch (e) {
-      if (!controller.signal.aborted) {
+      if (e instanceof UnauthorizedError) onUnauthorized();
+      else if (!controller.signal.aborted) {
         patch(assistantId, () => ({ error: (e as Error).message || "서버에 연결할 수 없습니다." }));
       }
     } finally {
       patch(assistantId, () => ({ streaming: false }));
-      abortRef.current = null;
+      if (abortRef.current === controller) abortRef.current = null;
+      onTurnComplete();
     }
   }
 
@@ -106,7 +160,8 @@ export default function Chat({ documentIds }: { documentIds: string[] }) {
     <section className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-8 md:px-8">
-          {messages.length === 0 && (
+          {loading && <p className="mt-10 animate-pulse text-sm text-cream-dim">대화를 불러오는 중…</p>}
+          {!loading && messages.length === 0 && (
             <div className="animate-rise mt-6 flex flex-col gap-8 md:mt-20">
               <h1 className="text-4xl leading-[1.1] font-light tracking-[-0.03em] md:text-6xl">
                 docsqa는 문서가
@@ -141,7 +196,7 @@ export default function Chat({ documentIds }: { documentIds: string[] }) {
               </div>
             ) : (
               <article key={m.id} className="animate-rise flex flex-col gap-4">
-                <StepIndicator steps={m.steps ?? []} />
+                {m.steps && <StepIndicator steps={m.steps} />}
                 {m.content && (
                   <div className="prose prose-docsqa max-w-none text-[16px] leading-relaxed font-light prose-strong:font-bold prose-code:rounded-md prose-code:bg-ink prose-code:px-1.5 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none">
                     <ReactMarkdown
