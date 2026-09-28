@@ -33,6 +33,10 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  // Two-step delete: first click arms the card, second click deletes.
+  // (window.confirm is silently dismissed in some embedded browsers.)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -50,12 +54,16 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
   }
 
   async function handleDelete(doc: DocumentInfo) {
-    if (!confirm(`"${doc.filename}" 문서를 삭제할까요?`)) return;
+    setPendingDelete(null);
+    setDeleting(doc.id);
+    setError(null);
     try {
       await deleteDocument(doc.id);
       onChange();
     } catch (e) {
-      setError((e as Error).message);
+      setError(`${doc.filename}: ${(e as Error).message}`);
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -164,14 +172,42 @@ export default function DocumentPanel({ documents, selectedIds, onToggle, onChan
                     </span>
                   </span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(doc)}
-                  aria-label={`${doc.filename} 삭제`}
-                  className="absolute top-1/2 right-3 grid size-8 -translate-y-1/2 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100 hover:bg-ink hover:text-cream focus:opacity-100"
-                >
-                  ✕
-                </button>
+                {deleting === doc.id ? (
+                  <span className="absolute top-1/2 right-4 -translate-y-1/2 animate-pulse text-xs font-bold">
+                    삭제 중…
+                  </span>
+                ) : pendingDelete === doc.id ? (
+                  <div
+                    className="absolute inset-y-0 right-2 flex items-center gap-1"
+                    onKeyDown={(e) => e.key === "Escape" && setPendingDelete(null)}
+                  >
+                    <button
+                      type="button"
+                      autoFocus
+                      onClick={() => handleDelete(doc)}
+                      className="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-cream"
+                    >
+                      삭제
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDelete(null)}
+                      className="rounded-full px-2 py-1.5 text-xs font-bold hover:bg-ink/15"
+                    >
+                      취소
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(doc.id)}
+                    aria-label={`${doc.filename} 삭제`}
+                    title="삭제"
+                    className="absolute top-1/2 right-3 grid size-8 -translate-y-1/2 place-items-center rounded-full opacity-40 transition-opacity group-hover:opacity-100 hover:bg-ink hover:text-cream focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                  >
+                    ✕
+                  </button>
+                )}
               </li>
             );
           })}
