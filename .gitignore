@@ -1,0 +1,11 @@
+.env
+.env.local
+.DS_Store
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Machine-specific CA certificates
+backend/certs/*.crt
+backend/.cache/
