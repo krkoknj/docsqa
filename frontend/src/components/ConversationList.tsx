@@ -40,17 +40,17 @@ export default function ConversationList({ conversations, activeId, onSelect, on
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className="flex items-center justify-between rounded-[2rem] border border-ink-line px-6 py-4 text-lg font-bold transition-colors hover:border-cream"
+        className="flex items-center justify-between rounded-[2rem] border border-line px-6 py-4 text-lg font-bold transition-colors hover:border-fg"
       >
         새 대화
-        <span className="grid size-8 place-items-center rounded-full bg-cream text-ink">+</span>
+        <span className="grid size-8 place-items-center rounded-full bg-ink text-cream">+</span>
       </button>
 
       {error && <p className="rounded-2xl bg-flame px-4 py-3 text-sm text-cream">{error}</p>}
 
       <ul className="-mx-1 flex max-h-56 flex-col gap-1 overflow-y-auto px-1 py-1 md:max-h-none">
         {conversations.length === 0 && (
-          <li className="px-2 py-3 text-sm font-light text-cream-dim">아직 대화가 없어요.</li>
+          <li className="px-2 py-3 text-sm font-light text-fg-dim">아직 대화가 없어요.</li>
         )}
         {conversations.map((c) => {
           const active = c.id === activeId;
@@ -61,11 +61,11 @@ export default function ConversationList({ conversations, activeId, onSelect, on
                 onClick={() => onSelect(c.id)}
                 aria-current={active ? "page" : undefined}
                 className={`flex w-full flex-col items-start rounded-2xl py-2.5 pr-12 pl-4 text-left transition-colors ${
-                  active ? "bg-lilac text-ink" : "hover:bg-ink-soft"
+                  active ? "bg-lilac text-ink" : "hover:bg-panel"
                 }`}
               >
                 <span className="w-full truncate text-sm font-bold">{c.title}</span>
-                <span className={`text-xs font-light ${active ? "opacity-70" : "text-cream-dim"}`}>
+                <span className={`text-xs font-light ${active ? "opacity-70" : "text-fg-dim"}`}>
                   {relativeTime(c.updated_at)}
                 </span>
               </button>
@@ -94,7 +94,7 @@ export default function ConversationList({ conversations, activeId, onSelect, on
                   onClick={() => setPendingDelete(c.id)}
                   aria-label={`${c.title} 대화 삭제`}
                   className={`absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-60 ${
-                    active ? "text-ink hover:bg-ink/15" : "hover:bg-ink"
+                    active ? "text-ink hover:bg-ink/15" : "hover:bg-ink hover:text-cream"
                   }`}
                 >
                   ✕

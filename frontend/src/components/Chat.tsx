@@ -160,7 +160,7 @@ export default function Chat({
     <section className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-8 md:px-8">
-          {loading && <p className="mt-10 animate-pulse text-sm text-cream-dim">대화를 불러오는 중…</p>}
+          {loading && <p className="mt-10 animate-pulse text-sm text-fg-dim">대화를 불러오는 중…</p>}
           {!loading && messages.length === 0 && (
             <div className="animate-rise mt-6 flex flex-col gap-8 md:mt-20">
               <h1 className="text-4xl leading-[1.1] font-light tracking-[-0.03em] md:text-6xl">
@@ -168,7 +168,7 @@ export default function Chat({
                 <br />
                 <strong className="font-bold">직접 대답하는</strong> 공간입니다.
               </h1>
-              <p className="max-w-md text-lg font-light text-cream-dim">
+              <p className="max-w-md text-lg font-light text-fg-dim">
                 문서를 올리고 질문하세요. 모든 답변에는 근거가 된 원문이 함께 달립니다.
               </p>
               <div className="flex flex-wrap gap-2.5">
@@ -177,7 +177,7 @@ export default function Chat({
                     key={q}
                     type="button"
                     onClick={() => send(q)}
-                    className="rounded-full border border-ink-line px-5 py-2.5 text-sm transition-colors hover:border-blush hover:bg-blush hover:text-ink"
+                    className="rounded-full border border-line px-5 py-2.5 text-sm transition-colors hover:border-blush hover:bg-blush hover:text-ink"
                   >
                     {q}
                   </button>
@@ -248,7 +248,7 @@ export default function Chat({
         }}
         className="px-5 pt-2 pb-5 md:px-8 md:pb-7"
       >
-        <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[2rem] border border-ink-line bg-ink-soft p-2 pl-6 transition-colors focus-within:border-cream">
+        <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[2rem] border border-line bg-field p-2 pl-6 transition-colors focus-within:border-fg">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -261,15 +261,15 @@ export default function Chat({
             rows={1}
             placeholder="질문을 입력하세요"
             aria-label="질문 입력 (Enter 전송, Shift+Enter 줄바꿈)"
-            className="max-h-40 flex-1 resize-none self-center bg-transparent py-2 text-base font-light outline-none placeholder:text-cream-dim"
+            className="max-h-40 flex-1 resize-none self-center bg-transparent py-2 text-base font-light outline-none placeholder:text-fg-dim"
           />
           {isStreaming ? (
             <button
               type="button"
               onClick={() => abortRef.current?.abort()}
-              className="flex h-12 items-center gap-2 rounded-full bg-cream px-5 font-bold text-ink"
+              className="flex h-12 items-center gap-2 rounded-full bg-ink px-5 font-bold text-cream"
             >
-              <span className="size-2.5 rounded-sm bg-ink" />
+              <span className="size-2.5 rounded-sm bg-cream" />
               중지
             </button>
           ) : (

@@ -17,11 +17,20 @@
   --color-forest: #1c3d24;
   --color-lilac: #e7bfff;
   --color-blush: #ffabc8;
+
+  /* Surface roles: warm, bright backgrounds with dark text. The accent colors above
+     (and ink/cream as a fixed dark/light pair on those accents) are unchanged. */
+  --color-page: #fff6ea; /* app background / sidebar: warm ivory */
+  --color-panel: #ffe8cf; /* chat panel, cards on the page: light apricot */
+  --color-field: #fffaf3; /* inputs sitting on the panel */
+  --color-fg: #2a2320; /* primary text on page/panel */
+  --color-fg-dim: #6e5d51; /* secondary text (>= 4.5:1 on panel) */
+  --color-line: #e6cdb0; /* borders on page/panel */
 }
 
 body {
-  background: var(--color-ink);
-  color: var(--color-cream);
+  background: var(--color-page);
+  color: var(--color-fg);
   /* Wrap Korean at word boundaries instead of mid-word. */
   word-break: keep-all;
   overflow-wrap: anywhere;
@@ -34,17 +43,17 @@ body {
 
 /* Answer body typography tuned for the dark theme. */
 .prose-docsqa {
-  --tw-prose-body: var(--color-cream);
-  --tw-prose-headings: var(--color-cream);
-  --tw-prose-bold: var(--color-cream);
+  --tw-prose-body: var(--color-fg);
+  --tw-prose-headings: var(--color-fg);
+  --tw-prose-bold: var(--color-fg);
   --tw-prose-bullets: var(--color-flame);
-  --tw-prose-counters: var(--color-cream-dim);
+  --tw-prose-counters: var(--color-fg-dim);
   --tw-prose-code: var(--color-lilac);
-  --tw-prose-quotes: var(--color-cream-dim);
-  --tw-prose-hr: var(--color-ink-line);
-  --tw-prose-th-borders: var(--color-ink-line);
-  --tw-prose-td-borders: var(--color-ink-line);
-  --tw-prose-links: var(--color-blush);
+  --tw-prose-quotes: var(--color-fg-dim);
+  --tw-prose-hr: var(--color-line);
+  --tw-prose-th-borders: var(--color-line);
+  --tw-prose-td-borders: var(--color-line);
+  --tw-prose-links: var(--color-flame);
 }
 
 @keyframes rise {

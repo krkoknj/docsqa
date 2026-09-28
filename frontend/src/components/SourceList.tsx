@@ -11,7 +11,7 @@ export default function SourceList({ sources, activeId, onSelect }: Props) {
   return (
     <div className="flex flex-col gap-2.5">
       <ul className="flex flex-wrap items-center gap-2">
-        <li className="mr-1 text-xs font-bold tracking-wide text-cream-dim uppercase">Sources</li>
+        <li className="mr-1 text-xs font-bold tracking-wide text-fg-dim uppercase">Sources</li>
         {sources.map((s) => (
           <li key={s.id}>
             <button
@@ -23,8 +23,8 @@ export default function SourceList({ sources, activeId, onSelect }: Props) {
                 activeId === s.id
                   ? "border-lilac bg-lilac text-ink"
                   : s.relevant === false
-                    ? "border-dashed border-ink-line text-cream-dim line-through hover:border-cream-dim"
-                    : "border-ink-line text-cream hover:border-cream"
+                    ? "border-dashed border-line text-fg-dim line-through hover:border-fg-dim"
+                    : "border-line text-fg hover:border-fg"
               }`}
             >
               <span className="font-bold">{s.id}</span> · {s.source}
