@@ -1,0 +1,5 @@
+{$DOMAIN} {
+	# No `encode` here: Next.js already compresses pages, and compressing the chat
+	# stream (text/event-stream) would buffer it. reverse_proxy flushes SSE immediately.
+	reverse_proxy frontend:3000
+}

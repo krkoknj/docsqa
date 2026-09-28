@@ -2,8 +2,12 @@ FROM python:3.13-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Trust extra CAs (e.g. antivirus HTTPS inspection) dropped into certs/ for local dev.
-COPY certs/ /usr/local/share/ca-certificates/extra/
-RUN update-ca-certificates
+# The folder always exists (README.md), so this also builds cleanly in CI with no certs.
+COPY certs/ /tmp/certs/
+RUN mkdir -p /usr/local/share/ca-certificates/extra \
+    && find /tmp/certs -name '*.crt' -exec cp {} /usr/local/share/ca-certificates/extra/ \; \
+    && update-ca-certificates \
+    && rm -rf /tmp/certs
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 WORKDIR /app

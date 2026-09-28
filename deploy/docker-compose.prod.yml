@@ -1,0 +1,67 @@
+# Production stack on any Docker host (a small VM is enough), using images that
+# .github/workflows/release.yml publishes to GitHub Container Registry.
+#
+#   cp deploy/.env.example deploy/.env   # fill in secrets and your domain
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d
+#
+# Only Caddy is exposed; it terminates HTTPS (automatic Let's Encrypt certificates)
+# and forwards to the Next.js frontend, which proxies /api/* to the backend.
+
+x-backend: &backend
+  image: ghcr.io/${GITHUB_OWNER:-krkoknj}/docsqa-backend:${IMAGE_TAG:-latest}
+  restart: unless-stopped
+  environment:
+    DATABASE_URL: postgresql+asyncpg://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/rag
+    OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY}
+    JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+    COOKIE_SECURE: "true"
+    EMBEDDED_WORKER: "false"
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: rag
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    <<: *backend
+
+  worker:
+    <<: *backend
+    command: ["uv", "run", "--no-sync", "python", "-m", "app.worker"]
+
+  frontend:
+    image: ghcr.io/${GITHUB_OWNER:-krkoknj}/docsqa-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - frontend
+
+volumes:
+  pgdata:
+  caddy_data:

@@ -9,3 +9,4 @@ __pycache__/
 # Machine-specific CA certificates
 backend/certs/*.crt
 backend/.cache/
+deploy/.env
