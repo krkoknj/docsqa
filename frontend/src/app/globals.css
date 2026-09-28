@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: var(--font-bricolage), var(--font-noto-kr), system-ui, sans-serif;
+
+  /* Warm charcoal + cream base, with saturated color blocks as accents. */
+  --color-ink: #201e1f;
+  --color-ink-soft: #2b2829;
+  --color-ink-line: #4a4546;
+  --color-cream: #f4efe8;
+  --color-cream-dim: #b8b1a8;
+
+  --color-sky: #5d9dc5;
+  --color-flame: #fc4109;
+  --color-mustard: #a67325;
+  --color-forest: #1c3d24;
+  --color-lilac: #e7bfff;
+  --color-blush: #ffabc8;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-cream);
+  /* Wrap Korean at word boundaries instead of mid-word. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+::selection {
+  background: var(--color-lilac);
+  color: var(--color-ink);
+}
+
+/* Answer body typography tuned for the dark theme. */
+.prose-docsqa {
+  --tw-prose-body: var(--color-cream);
+  --tw-prose-headings: var(--color-cream);
+  --tw-prose-bold: var(--color-cream);
+  --tw-prose-bullets: var(--color-flame);
+  --tw-prose-counters: var(--color-cream-dim);
+  --tw-prose-code: var(--color-lilac);
+  --tw-prose-quotes: var(--color-cream-dim);
+  --tw-prose-hr: var(--color-ink-line);
+  --tw-prose-th-borders: var(--color-ink-line);
+  --tw-prose-td-borders: var(--color-ink-line);
+  --tw-prose-links: var(--color-blush);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
